@@ -231,6 +231,8 @@ ask "Пароль администратора" "$DEFAULT_PASS" ADMIN_PASSWORD s
 step "Дополнительно"
 ask_optional "ID Telegram-канала для обязательной подписки (0 = выкл)" "0" CHANNEL_ID
 ask_optional "Публичный URL для AdminPanel" "http://localhost:8000" PUBLIC_URL
+info "${YELLOW}Если сервер в России — укажите SOCKS5-прокси для доступа к Telegram.${NC}"
+ask_optional "SOCKS5 прокси (например socks5://user:pass@host:port, пусто = нет)" "" PROXY_URL
 
 # ── Генерируем секреты ────────────────────────────────────────────────────────
 
@@ -274,6 +276,9 @@ JWT_ALGORITHM=HS256
 
 # Channel gate (0 = disabled)
 CHANNEL_ID=${CHANNEL_ID}
+
+# Proxy for Telegram API (leave empty if not needed)
+SOCKS5_PROXY_URL=${PROXY_URL}
 EOF
 
 ok "Файл ${ENV_FILE} создан."

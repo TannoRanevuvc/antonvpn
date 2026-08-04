@@ -2,6 +2,7 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
@@ -15,9 +16,14 @@ from config import settings, logger
 
 
 async def main() -> None:
+    session_kwargs = {}
+    if settings.SOCKS5_PROXY_URL:
+        session_kwargs["proxy"] = settings.SOCKS5_PROXY_URL
+
     bot = Bot(
         token=settings.TOKEN_BOT_TG,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        session=AiohttpSession(**session_kwargs),
     )
 
     dp = Dispatcher(storage=MemoryStorage())
