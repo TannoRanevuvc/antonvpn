@@ -1,0 +1,78 @@
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from sqladmin import Admin
+from starlette.middleware.sessions import SessionMiddleware
+
+from admin.auth import AdminAuthBackend
+from admin.views.basic import (
+    ChannelSettingsAdmin,
+    DeviceAdmin,
+    GiftAdmin,
+    MessageTemplateAdmin,
+    NotificationRuleAdmin,
+    PaymentAdmin,
+    ReferralAdmin,
+    ReferralSettingsAdmin,
+    BotSettingsAdmin,
+    SubscriptionAdmin,
+    TariffAdmin,
+    TopUpAdmin,
+    UserAdmin,
+)
+from admin.views.custom import BroadcastView, DashboardView
+from admin.webhooks import router as webhooks_router
+from config import settings
+from database.confdb import engine
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+
+
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="AntonVPN Admin",
+        docs_url=None,
+        redoc_url=None,
+        lifespan=lifespan,
+    )
+
+    app.add_middleware(SessionMiddleware, secret_key=settings.JWT_SECRET_KEY)
+
+    # Admin panel
+    auth_backend = AdminAuthBackend(secret_key=settings.JWT_SECRET_KEY)
+    admin = Admin(
+        app,
+        engine=engine,
+        authentication_backend=auth_backend,
+        base_url=settings.BASE_ADMIN_URL,
+        title="AntonVPN Admin",
+    )
+
+    # Register model views
+    for view_cls in [
+        UserAdmin, ReferralAdmin,
+        SubscriptionAdmin, DeviceAdmin,
+        TariffAdmin,
+        TopUpAdmin, PaymentAdmin,
+        GiftAdmin,
+        MessageTemplateAdmin,
+        NotificationRuleAdmin,
+        BotSettingsAdmin, ReferralSettingsAdmin, ChannelSettingsAdmin,
+    ]:
+        admin.add_view(view_cls)
+
+    # Custom views
+    admin.add_view(DashboardView)
+    admin.add_view(BroadcastView)
+
+    # Routers
+    app.include_router(webhooks_router)
+
+    return app
+
+
+app = create_app()

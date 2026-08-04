@@ -1,0 +1,32 @@
+# Secrets — never commit
+config/.env
+
+# Database data
+pgdata/
+
+# Media uploads
+media/banners/*
+!media/banners/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:17.2-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: antonvpn
+      POSTGRES_USER: antonvpn_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-antonvpn_pass}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U antonvpn_user -d antonvpn"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    restart: unless-stopped
+    env_file:
+      - config/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./media:/app/media
+    networks:
+      - default
+      - remnawave-network
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    restart: unless-stopped
+    env_file:
+      - config/.env
+    environment:
+      TZ: Europe/Moscow
+    depends_on:
+      admin:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./media:/app/media:ro
+    networks:
+      - default
+      - remnawave-network
+
+networks:
+  default:
+  remnawave-network:
+    external: true

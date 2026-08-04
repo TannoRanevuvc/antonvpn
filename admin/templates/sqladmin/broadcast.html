@@ -1,0 +1,65 @@
+{% extends "sqladmin/layout.html" %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header">
+    <div class="row align-items-center">
+      <div class="col-auto">
+        <h2 class="page-title">Рассылка сообщений</h2>
+      </div>
+    </div>
+  </div>
+
+  {% if message %}
+  <div class="alert alert-info">{{ message }}</div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Отправить сообщение пользователям</h3>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label">Сегмент аудитории</label>
+          <select name="segment" class="form-select">
+            <option value="all">Все пользователи</option>
+            <option value="active_vpn">Активные VPN</option>
+            <option value="active_obfs">Активные Обход глушилок</option>
+            <option value="expiring_3d">Истекают за 3 дня</option>
+            <option value="no_sub">Без подписки</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Текст сообщения (HTML)</label>
+          <textarea name="text" class="form-control" rows="8" placeholder="Введите текст..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-paper-plane me-2"></i>Запустить рассылку
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {% if progress %}
+  <div class="card mt-3">
+    <div class="card-header"><h3 class="card-title">Активные рассылки</h3></div>
+    <div class="card-body">
+      <table class="table table-vcenter">
+        <thead><tr><th>ID</th><th>Отправлено</th><th>Ошибки</th><th>Всего</th><th>Статус</th></tr></thead>
+        <tbody>
+          {% for jid, p in progress.items() %}
+          <tr>
+            <td>{{ jid }}</td>
+            <td>{{ p.sent }}</td>
+            <td>{{ p.failed }}</td>
+            <td>{{ p.total }}</td>
+            <td>{% if p.done %}✅ Готово{% else %}⏳ В процессе{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

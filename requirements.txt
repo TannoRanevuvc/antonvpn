@@ -1,0 +1,32 @@
+# Telegram
+aiogram==3.20.0
+aiogram-dialog==2.3.1
+
+# Web / Admin
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+gunicorn==22.0.0
+sqladmin==0.20.1
+fastapi-storages==0.3.0
+itsdangerous==2.2.0
+python-multipart==0.0.9
+jinja2==3.1.4
+aiohttp==3.10.5
+
+# Database
+sqlalchemy==2.0.35
+asyncpg==0.30.0
+alembic==1.13.3
+
+# Cache
+redis==5.1.1
+
+# Config / validation
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# Scheduling
+apscheduler==3.10.4
+
+# Utils
+python-dotenv==1.0.1
