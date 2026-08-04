@@ -73,12 +73,12 @@ cd "$INSTALL_DIR"
 
 step "Запуск мастера настройки"
 chmod +x setup.sh
-bash setup.sh
+bash setup.sh < /dev/tty
 
 # ── 5. Launch ─────────────────────────────────────────────────────────────────
 
 step "Запуск AntonVPN"
-make up
+make up < /dev/tty
 
 echo ""
 echo -e "${GREEN}${BOLD}══════════════════════════════════════════${NC}"

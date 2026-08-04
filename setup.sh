@@ -139,8 +139,8 @@ install_remnawave_panel() {
   ask "Домен панели (FRONT_END_DOMAIN)" "" RW_PANEL_DOMAIN
   ask_optional "Домен подписки (SUB_PUBLIC_DOMAIN)" "${RW_PANEL_DOMAIN}/api/sub" RW_SUB_DOMAIN
 
-  sed -i "s/^FRONT_END_DOMAIN=.*/FRONT_END_DOMAIN=${RW_PANEL_DOMAIN}/" .env
-  sed -i "s/^SUB_PUBLIC_DOMAIN=.*/SUB_PUBLIC_DOMAIN=${RW_SUB_DOMAIN}/" .env
+  sed -i "s|^FRONT_END_DOMAIN=.*|FRONT_END_DOMAIN=${RW_PANEL_DOMAIN}|" .env
+  sed -i "s|^SUB_PUBLIC_DOMAIN=.*|SUB_PUBLIC_DOMAIN=${RW_SUB_DOMAIN}|" .env
   ok "Домены настроены."
 
   # 7. Запускаем
