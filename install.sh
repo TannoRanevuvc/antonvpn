@@ -2,15 +2,15 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # AntonVPN — One-command installer
 #
-# Usage (after pushing to GitHub):
-#   curl -fsSL https://raw.githubusercontent.com/YOUR/REPO/main/install.sh | bash
+# Usage:
+#   curl -fsSL https://raw.githubusercontent.com/TannoRanevuvc/antonvpn/main/install.sh | bash
 #
 # Or with sudo (required if you want to install Remnawave Panel):
-#   curl -fsSL https://raw.githubusercontent.com/YOUR/REPO/main/install.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/TannoRanevuvc/antonvpn/main/install.sh | sudo bash
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-REPO_URL="${ANTONVPN_REPO:-}"   # можно передать через env: ANTONVPN_REPO=... | bash
+REPO_URL="${ANTONVPN_REPO:-https://github.com/TannoRanevuvc/antonvpn.git}"
 INSTALL_DIR="${ANTONVPN_DIR:-/opt/antonvpn}"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'; BOLD='\033[1m'
@@ -52,9 +52,7 @@ ok "docker: $(docker --version | cut -d' ' -f3 | tr -d ',')"
 step "Получение репозитория"
 
 if [[ -z "$REPO_URL" ]]; then
-  echo -ne "  ${BOLD}URL репозитория${NC} (например https://github.com/you/antonvpn): "
-  read -r REPO_URL
-  [[ -z "$REPO_URL" ]] && err "URL репозитория обязателен."
+  err "URL репозитория не задан. Установите переменную ANTONVPN_REPO или используйте официальный установщик."
 fi
 
 # ── 3. Clone or update ────────────────────────────────────────────────────────
