@@ -2,7 +2,7 @@ import secrets
 import string
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, Index, Numeric, String, UniqueConstraint, func
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, Numeric, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -58,10 +58,10 @@ class Referral(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     referrer_user_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False
+        BigInteger, ForeignKey("users.id"), nullable=False
     )
     referred_user_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False
+        BigInteger, ForeignKey("users.id"), nullable=False
     )
     reward_credited: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, server_default=func.now())
