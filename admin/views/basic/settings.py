@@ -75,8 +75,24 @@ class ReferralSettingsAdmin(ModelView, model=ReferralSettings):
     name = "Реферальная программа"
     name_plural = "Реферальная программа"
     icon = "fa-solid fa-handshake"
-    column_list = [ReferralSettings.id, ReferralSettings.is_enabled, ReferralSettings.reward_type, ReferralSettings.reward_amount, ReferralSettings.max_rewards_per_referrer]
-    form_columns = [ReferralSettings.is_enabled, ReferralSettings.reward_type, ReferralSettings.reward_amount, ReferralSettings.max_rewards_per_referrer]
+    column_list = [
+        ReferralSettings.id,
+        ReferralSettings.is_enabled,
+        ReferralSettings.level1_percent,
+        ReferralSettings.level2_percent,
+        ReferralSettings.max_paid_topups,
+    ]
+    form_columns = [
+        ReferralSettings.is_enabled,
+        ReferralSettings.level1_percent,
+        ReferralSettings.level2_percent,
+        ReferralSettings.max_paid_topups,
+    ]
+    column_labels = {
+        "level1_percent": "% за 1-й уровень",
+        "level2_percent": "% за 2-й уровень",
+        "max_paid_topups": "Макс. пополнений для начисления",
+    }
     can_create = False
     can_delete = False
 

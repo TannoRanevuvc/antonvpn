@@ -35,9 +35,9 @@ class ReferralSettings(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, default=1)
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
-    reward_type: Mapped[str] = mapped_column(String(16), default="balance", server_default="balance")
-    reward_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0, server_default="0")
-    max_rewards_per_referrer: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    level1_percent: Mapped[float] = mapped_column(Numeric(5, 2), default=15, server_default="15")
+    level2_percent: Mapped[float] = mapped_column(Numeric(5, 2), default=5, server_default="5")
+    max_paid_topups: Mapped[int] = mapped_column(Integer, default=2, server_default="2")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, server_default=func.now()
     )

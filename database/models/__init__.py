@@ -8,6 +8,7 @@ from .message import MessageTemplate
 from .notification import NotificationRule
 from .settings import BotSettings, ReferralSettings, ChannelSettings
 from .document import LegalDocument
+from .referral_reward import ReferralReward
 
 __all__ = [
     "Base",
@@ -20,4 +21,5 @@ __all__ = [
     "NotificationRule",
     "BotSettings", "ReferralSettings", "ChannelSettings",
     "LegalDocument",
+    "ReferralReward",
 ]

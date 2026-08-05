@@ -63,6 +63,13 @@ class PaymentService:
             user = await user_repo.get_by_id(topup.user_id)
             if user:
                 await self.user_service.credit_balance(user, float(topup.amount_rub))
+                from .referral_service import ReferralService
+                ref_svc = ReferralService(self.session)
+                await ref_svc.credit_referral_rewards(
+                    payer_user_id=user.id,
+                    amount_rub=float(topup.amount_rub),
+                    topup_id=topup.id,
+                )
 
         return topup
 

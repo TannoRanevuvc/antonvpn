@@ -1,7 +1,7 @@
 from .user import UserAdmin, ReferralAdmin
 from .subscription import SubscriptionAdmin, DeviceAdmin
 from .tariff import TariffAdmin
-from .payment import TopUpAdmin, PaymentAdmin
+from .payment import TopUpAdmin, PaymentAdmin, ReferralRewardAdmin
 from .gift import GiftAdmin
 from .message import MessageTemplateAdmin
 from .notification import NotificationRuleAdmin
@@ -12,7 +12,7 @@ __all__ = [
     "UserAdmin", "ReferralAdmin",
     "SubscriptionAdmin", "DeviceAdmin",
     "TariffAdmin",
-    "TopUpAdmin", "PaymentAdmin",
+    "TopUpAdmin", "PaymentAdmin", "ReferralRewardAdmin",
     "GiftAdmin",
     "MessageTemplateAdmin",
     "NotificationRuleAdmin",
