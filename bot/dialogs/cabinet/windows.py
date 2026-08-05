@@ -4,8 +4,8 @@ from aiogram_dialog.widgets.kbd import Button, Row, Url
 from aiogram_dialog.widgets.media import DynamicMedia
 from aiogram_dialog.widgets.text import Format
 
-from bot.states import CabinetSG, GiftsSG, OfertaSG, PaymentsSG, ReferralSG, SubscriptionsSG
-from .getters import cabinet_getter, oferta_getter
+from bot.states import CabinetSG, GiftsSG, PaymentsSG, ReferralSG, SubscriptionsSG
+from .getters import cabinet_getter
 
 
 async def on_language_toggle(callback: types.CallbackQuery, button: Button, manager: DialogManager) -> None:
@@ -17,6 +17,26 @@ async def on_language_toggle(callback: types.CallbackQuery, button: Button, mana
     await svc.update_language(user, new_lang)
     manager.middleware_data["user"] = await svc.get_by_chat_id(user.chat_id)
     await manager.show()
+
+
+async def on_oferta_click(callback: types.CallbackQuery, button: Button, manager: DialogManager) -> None:
+    session = manager.middleware_data.get("session")
+    from database.repositories import BotSettingsRepository
+    bot_settings = await BotSettingsRepository(session).get()
+    file_path = bot_settings.oferta_file_path if bot_settings else None
+    if not file_path:
+        await callback.answer("Файл оферты не загружен.", show_alert=True)
+        return
+    import os
+    if not os.path.exists(file_path):
+        await callback.answer("Файл оферты не найден на сервере.", show_alert=True)
+        return
+    from aiogram.types import FSInputFile
+    await callback.message.answer_document(
+        FSInputFile(file_path),
+        caption="📄 Оферта",
+    )
+    await callback.answer()
 
 
 def build_cabinet_window() -> Window:
@@ -39,19 +59,8 @@ def build_cabinet_window() -> Window:
             Url(Format("💬 Поддержка"), url=Format("{support_url}"), when="support_url"),
             Button(Format("🌍 Язык/Language"), id="lang", on_click=on_language_toggle),
         ),
-        Button(Format("📄 Оферта"), id="oferta", on_click=lambda c, b, m: m.start(OfertaSG.VIEW)),
+        Button(Format("📄 Оферта"), id="oferta", on_click=on_oferta_click),
         state=CabinetSG.MAIN,
         getter=cabinet_getter,
-        parse_mode="HTML",
-    )
-
-
-def build_oferta_window() -> Window:
-    return Window(
-        DynamicMedia("image_path", when="image_path"),
-        Format("{text}"),
-        Button(Format("« Назад"), id="back", on_click=lambda c, b, m: m.start(CabinetSG.MAIN)),
-        state=OfertaSG.VIEW,
-        getter=oferta_getter,
         parse_mode="HTML",
     )

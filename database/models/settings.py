@@ -17,6 +17,7 @@ class BotSettings(Base):
     support_url: Mapped[str | None] = mapped_column(String(256), nullable=True)
     bot_description: Mapped[str | None] = mapped_column(String(512), nullable=True)
     bot_short_description: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    oferta_file_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, server_default=func.now()
     )

@@ -1,8 +1,13 @@
 import aiohttp
+from fastapi_storages import FileSystemStorage
+from fastapi_storages.integrations.sqladmin import FileField
 from sqladmin import ModelView
+from wtforms import FileField as WTFileField
 
 from config import settings as app_settings
 from database.models.settings import BotSettings, ChannelSettings, ReferralSettings
+
+_oferta_storage = FileSystemStorage(path="media/oferta")
 
 
 async def _apply_bot_description(model: BotSettings) -> None:
@@ -38,7 +43,10 @@ class BotSettingsAdmin(ModelView, model=BotSettings):
         BotSettings.support_url,
         BotSettings.bot_description,
         BotSettings.bot_short_description,
+        BotSettings.oferta_file_path,
     ]
+    form_overrides = {"oferta_file_path": FileField}
+    form_args = {"oferta_file_path": {"storage": _oferta_storage, "label": "Файл оферты (PDF/документ)"}}
     form_include_pk = False
     can_create = False
     can_delete = False
