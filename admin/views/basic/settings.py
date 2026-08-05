@@ -1,13 +1,14 @@
+import os
+
 import aiohttp
-from fastapi_storages import FileSystemStorage
-from fastapi_storages.integrations.sqladmin import FileField
 from sqladmin import ModelView
-from wtforms import FileField as WTFileField
+from wtforms import FileField
 
 from config import settings as app_settings
 from database.models.settings import BotSettings, ChannelSettings, ReferralSettings
 
-_oferta_storage = FileSystemStorage(path="media/oferta")
+OFERTA_DIR = "media/oferta"
+os.makedirs(OFERTA_DIR, exist_ok=True)
 
 
 async def _apply_bot_description(model: BotSettings) -> None:
@@ -46,10 +47,22 @@ class BotSettingsAdmin(ModelView, model=BotSettings):
         BotSettings.oferta_file_path,
     ]
     form_overrides = {"oferta_file_path": FileField}
-    form_args = {"oferta_file_path": {"storage": _oferta_storage, "label": "Файл оферты (PDF/документ)"}}
+    form_args = {"oferta_file_path": {"label": "Файл оферты (PDF/документ)"}}
     form_include_pk = False
     can_create = False
     can_delete = False
+
+    async def on_model_change(self, data, model, is_created, request) -> None:
+        upload = data.get("oferta_file_path")
+        if upload and hasattr(upload, "filename") and upload.filename:
+            ext = os.path.splitext(upload.filename)[1]
+            dest = os.path.join(OFERTA_DIR, f"oferta{ext}")
+            contents = upload.file.read()
+            with open(dest, "wb") as f:
+                f.write(contents)
+            data["oferta_file_path"] = dest
+        else:
+            data["oferta_file_path"] = model.oferta_file_path
 
     async def after_model_change(self, data, model, is_created, request) -> None:
         from database.cache import BotSettingsCache
