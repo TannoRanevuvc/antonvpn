@@ -47,17 +47,20 @@ async def subscription_detail_getter(dialog_manager: DialogManager, **kwargs) ->
     exp = sub.expires_at.strftime("%d.%m.%Y %H:%M") if sub.expires_at else "—"
     device_count = len(sub.devices)
     auto = "✅ Вкл" if sub.auto_renewal else "❌ Выкл"
-    sub_url = sub.remna_sub_url or "—"
+    sub_url = sub.remna_sub_url or None
 
     text = payload["text"].format(
         name=name,
-        sub_url=sub_url,
+        sub_url=sub_url or "—",
         tariff_type=sub.tariff_type.value,
         expires_at=exp,
         device_count=device_count,
         max_devices=sub.max_devices,
         auto_renewal=auto,
     )
+
+    # Cache sub_url in dialog_data for the send-url callback
+    dialog_manager.dialog_data["sub_url"] = sub_url
 
     return {
         "text": text,

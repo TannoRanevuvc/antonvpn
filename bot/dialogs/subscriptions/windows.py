@@ -1,7 +1,8 @@
 from aiogram import types
+from aiogram.types import WebAppInfo
 from aiogram_dialog import DialogManager, Window
 from aiogram_dialog.widgets.input import TextInput
-from aiogram_dialog.widgets.kbd import Button, Cancel, Column, Row, Select, SwitchTo
+from aiogram_dialog.widgets.kbd import Button, Cancel, Column, Row, Select, SwitchTo, WebApp
 from aiogram_dialog.widgets.media import DynamicMedia
 from aiogram_dialog.widgets.text import Const, Format
 
@@ -12,6 +13,28 @@ from .getters import devices_getter, subscription_detail_getter, subscriptions_l
 async def on_sub_selected(callback: types.CallbackQuery, widget, manager: DialogManager, item_id: str) -> None:
     manager.dialog_data["sub_id"] = item_id
     await manager.switch_to(SubscriptionsSG.DETAIL)
+
+
+async def on_send_sub_url(callback: types.CallbackQuery, button: Button, manager: DialogManager) -> None:
+    sub_url = manager.dialog_data.get("sub_url") or manager.middleware_data.get("sub_url")
+    if not sub_url:
+        # Fetch from DB
+        session = manager.middleware_data.get("session")
+        user = manager.middleware_data.get("user")
+        sub_id = manager.dialog_data.get("sub_id")
+        from database.repositories import SubscriptionRepository
+        sub = await SubscriptionRepository(session).get_by_id_and_user(int(sub_id), user.id)
+        sub_url = sub.remna_sub_url if sub else None
+
+    if not sub_url:
+        await callback.answer("Ссылка подписки недоступна.", show_alert=True)
+        return
+
+    await callback.message.answer(
+        f"🔗 <b>Ссылка для VPN-клиента:</b>\n<code>{sub_url}</code>",
+        parse_mode="HTML",
+    )
+    await callback.answer()
 
 
 async def on_device_delete(callback: types.CallbackQuery, widget, manager: DialogManager, item_id: str) -> None:
@@ -86,8 +109,19 @@ def build_subscriptions_windows() -> list[Window]:
         DynamicMedia("image_path", when="image_path"),
         Format("{text}"),
         Row(
-            Button(Const("📋 Копировать ссылку"), id="copy_url", on_click=lambda c, b, m: None),
+            WebApp(
+                Const("🌐 Открыть подписку"),
+                url=Format("{sub_url}"),
+                id="open_sub",
+                when="sub_url",
+            ),
             Button(Const("📱 Устройства"), id="devices", on_click=lambda c, b, m: m.switch_to(SubscriptionsSG.DEVICES)),
+        ),
+        Button(
+            Const("📋 Ссылка для VPN-клиента"),
+            id="send_url",
+            on_click=on_send_sub_url,
+            when="sub_url",
         ),
         Row(
             Button(Const("🔄 Продлить"), id="renew", on_click=lambda c, b, m: m.start(TariffsSG.TYPE_SELECT)),
