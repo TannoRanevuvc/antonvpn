@@ -59,8 +59,6 @@ class BotSettingsAdmin(ModelView, model=BotSettings):
         BotSettings.bot_description,
         BotSettings.bot_short_description,
         BotSettings.oferta_file_path,
-        "oferta_upload",
-        "bot_photo_upload",
     ]
     form_extra_fields = {
         "oferta_upload": FileField("Загрузить файл оферты (PDF/документ)"),
