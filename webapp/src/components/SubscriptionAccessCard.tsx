@@ -40,16 +40,16 @@ async function copyToClipboard(text: string): Promise<void> {
 }
 
 function openHapp(subscriptionUrl: string) {
-  const deepLink = `happ://add/${encodeURIComponent(subscriptionUrl)}`;
-  // Try Telegram WebApp openLink first, then window.location
-  try {
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg?.openLink) {
-      tg.openLink(deepLink);
-      return;
-    }
-  } catch {/* ignore */}
-  window.location.href = deepLink;
+  // Happ deep link format: happ://add/{raw_url} — no encoding
+  const deepLink = `happ://add/${subscriptionUrl}`;
+  // Create an invisible anchor and click it — works in Telegram WebView
+  // on both iOS and Android. tg.openLink() only handles http/https.
+  const a = document.createElement("a");
+  a.href = deepLink;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 type CopyState = "idle" | "success" | "error";
