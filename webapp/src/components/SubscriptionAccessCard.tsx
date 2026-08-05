@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Copy, Check, AlertCircle } from "lucide-react";
+import { Copy, Check, AlertCircle, Zap } from "lucide-react";
 import QRCode from "qrcode";
 import "./SubscriptionAccessCard.css";
 
@@ -11,7 +11,6 @@ function maskUrl(url: string): string {
   try {
     const u = new URL(url);
     const path = u.pathname;
-    // show only first 8 chars of the path part after /sub/
     const parts = path.split("/");
     const last = parts[parts.length - 1];
     const masked = last.slice(0, 8) + "•".repeat(Math.max(0, last.length - 8));
@@ -29,7 +28,6 @@ async function copyToClipboard(text: string): Promise<void> {
     await navigator.clipboard.writeText(text);
     return;
   }
-  // fallback for old WebView
   const el = document.createElement("textarea");
   el.value = text;
   el.style.position = "fixed";
@@ -39,6 +37,19 @@ async function copyToClipboard(text: string): Promise<void> {
   el.select();
   document.execCommand("copy");
   document.body.removeChild(el);
+}
+
+function openHapp(subscriptionUrl: string) {
+  const deepLink = `happ://add/${encodeURIComponent(subscriptionUrl)}`;
+  // Try Telegram WebApp openLink first, then window.location
+  try {
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.openLink) {
+      tg.openLink(deepLink);
+      return;
+    }
+  } catch {/* ignore */}
+  window.location.href = deepLink;
 }
 
 type CopyState = "idle" | "success" | "error";
@@ -122,6 +133,15 @@ export function SubscriptionAccessCard({ subscriptionUrl }: SubscriptionAccessCa
             Скопировать ссылку
           </>
         )}
+      </button>
+
+      <button
+        className="btn btn-happ"
+        onClick={() => openHapp(subscriptionUrl)}
+        aria-label="Открыть в Happ"
+      >
+        <Zap size={18} strokeWidth={1.75} aria-hidden="true" />
+        Открыть в Happ
       </button>
 
       {copyState === "error" && (
