@@ -43,7 +43,7 @@ async function copyToClipboard(text: string): Promise<void> {
 function openHapp(subscriptionUrl: string) {
   const deepLink = createHappDeepLink(subscriptionUrl);
   if (!deepLink) return;
-  window.location.href = deepLink;
+  window.open(deepLink, "_blank");
 }
 
 type CopyState = "idle" | "success" | "error";
