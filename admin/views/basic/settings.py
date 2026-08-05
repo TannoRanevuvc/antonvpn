@@ -60,13 +60,18 @@ class BotSettingsAdmin(ModelView, model=BotSettings):
         BotSettings.bot_short_description,
         BotSettings.oferta_file_path,
     ]
-    form_extra_fields = {
-        "oferta_upload": FileField("Загрузить файл оферты (PDF/документ)"),
-        "bot_photo_upload": FileField("Загрузить фото бота (JPG/PNG)"),
-    }
     form_include_pk = False
     can_create = False
     can_delete = False
+
+    async def scaffold_form(self, rules=None):
+        base = await super().scaffold_form(rules)
+        # form_extra_fields is not supported in sqladmin 0.20 — inject via subclass
+        extra = {
+            "oferta_upload": FileField("Загрузить файл оферты (PDF/документ)"),
+            "bot_photo_upload": FileField("Загрузить фото бота (JPG/PNG)"),
+        }
+        return type(base.__name__, (base,), extra)
 
     async def on_model_change(self, data, model, is_created, request) -> None:
         oferta = data.pop("oferta_upload", None)
