@@ -1,3 +1,12 @@
+# Stage 1: build React webapp
+FROM node:20-slim AS webapp-builder
+WORKDIR /webapp
+COPY webapp/package*.json ./
+RUN npm ci --silent
+COPY webapp/ ./
+RUN npm run build
+
+# Stage 2: Python admin service
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -10,6 +19,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+
+# Copy built webapp from stage 1
+COPY --from=webapp-builder /webapp/dist ./webapp/dist
 
 CMD sh -c "alembic upgrade head && python -m database.seed && \
     gunicorn -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 admin.app:app"
