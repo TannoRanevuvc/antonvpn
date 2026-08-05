@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Copy, Check, AlertCircle, Zap } from "lucide-react";
 import QRCode from "qrcode";
+import { createHappDeepLink } from "../happ";
 import "./SubscriptionAccessCard.css";
 
 interface SubscriptionAccessCardProps {
@@ -40,16 +41,9 @@ async function copyToClipboard(text: string): Promise<void> {
 }
 
 function openHapp(subscriptionUrl: string) {
-  // Happ deep link format: happ://add/{raw_url} — no encoding
-  const deepLink = `happ://add/${subscriptionUrl}`;
-  // Create an invisible anchor and click it — works in Telegram WebView
-  // on both iOS and Android. tg.openLink() only handles http/https.
-  const a = document.createElement("a");
-  a.href = deepLink;
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const deepLink = createHappDeepLink(subscriptionUrl);
+  if (!deepLink) return;
+  window.location.href = deepLink;
 }
 
 type CopyState = "idle" | "success" | "error";
