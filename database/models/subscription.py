@@ -36,6 +36,7 @@ class Subscription(Base):
     max_devices: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    is_trial: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     auto_renewal: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     sub_remind_3d_sent: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     sub_remind_1d_sent: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")

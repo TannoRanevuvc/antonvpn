@@ -26,6 +26,15 @@ class SubscriptionRepository(BaseRepository[Subscription]):
         )
         return result.scalar_one_or_none()
 
+    async def has_trial_subscription(self, user_id: int) -> bool:
+        result = await self.session.execute(
+            select(Subscription).where(
+                Subscription.user_id == user_id,
+                Subscription.is_trial == True,
+            )
+        )
+        return result.scalar_one_or_none() is not None
+
     async def get_by_remna_username(self, remna_username: str) -> Subscription | None:
         result = await self.session.execute(
             select(Subscription).where(Subscription.remna_username == remna_username)
@@ -95,6 +104,7 @@ class SubscriptionRepository(BaseRepository[Subscription]):
         tariff_id: int | None = None,
         squad_uuid: str | None = None,
         max_devices: int = 1,
+        is_trial: bool = False,
     ) -> Subscription:
         sub = Subscription(
             user_id=user_id,
@@ -103,6 +113,7 @@ class SubscriptionRepository(BaseRepository[Subscription]):
             tariff_type=tariff_type,
             squad_uuid=squad_uuid,
             max_devices=max_devices,
+            is_trial=is_trial,
         )
         sub = await self.save(sub)
         await SubscriptionCache.delete(user_id)

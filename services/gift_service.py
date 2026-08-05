@@ -56,13 +56,17 @@ class GiftService:
         # We bypass balance check — gift was already paid by sender
         from datetime import timedelta
         from database.models.subscription import TariffType
-        from database.repositories import SubscriptionRepository, PaymentRepository
+        from database.repositories import SubscriptionRepository, PaymentRepository, BotSettingsRepository
         from services.remnawave_service import RemnawaveService
-        from services.subscription_service import _make_remna_username
+        from services.subscription_service import SubscriptionService, _make_remna_username
 
         sub_repo = SubscriptionRepository(self.session)
         payment_repo = PaymentRepository(self.session)
         remna = RemnawaveService()
+        bot_settings = await BotSettingsRepository(self.session).get()
+        # Gift subscriptions go to the default squad
+        squad_uuid = (bot_settings.default_squad_uuid if bot_settings else None) or tariff.squad_uuid
+
         expires_at = datetime.utcnow() + timedelta(days=tariff.duration_days)
         remna_username = _make_remna_username(recipient.chat_id)
 
@@ -71,7 +75,7 @@ class GiftService:
             remna_username=remna_username,
             tariff_type=TariffType(tariff.tariff_type),
             tariff_id=tariff.id,
-            squad_uuid=tariff.squad_uuid,
+            squad_uuid=squad_uuid,
             max_devices=tariff.max_devices,
         )
 
@@ -82,16 +86,13 @@ class GiftService:
             tariff_id=tariff.id,
         )
 
+        svc = SubscriptionService(self.session)
         try:
             remna_data = await remna.create_user(
-                username=remna_username, expires_at=expires_at, squad_uuid=tariff.squad_uuid
+                username=remna_username, expires_at=expires_at, squad_uuid=squad_uuid
             )
-            short_uuid = remna_data.get("shortUuid")
-            from config import settings
-            sub_url = remna_data.get("subscriptionUrl") or (
-                f"{settings.REMNAWAVE_PANEL_URL}/api/sub/{short_uuid}" if short_uuid else None
-            )
-            await sub_repo.update_remna_data(sub, remna_data.get("uuid", ""), short_uuid, sub_url, expires_at)
+            remna_uuid, short_uuid, sub_url = svc._extract_remna_fields(remna_data)
+            await sub_repo.update_remna_data(sub, remna_uuid, short_uuid, sub_url, expires_at)
             await payment_repo.mark_completed(payment)
         except Exception as exc:
             logger.error("Remnawave failed during gift activation for sub %s: %s", sub.id, exc)

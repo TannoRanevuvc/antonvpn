@@ -4,7 +4,6 @@ from bot.utils.message_builder import build_payload_by_key
 from database.repositories import BotSettingsRepository, SubscriptionRepository
 
 
-
 async def cabinet_getter(dialog_manager: DialogManager, **kwargs) -> dict:
     session = dialog_manager.middleware_data.get("session")
     user = dialog_manager.middleware_data.get("user")
@@ -16,6 +15,12 @@ async def cabinet_getter(dialog_manager: DialogManager, **kwargs) -> dict:
 
     balance = float(user.balance_rub)
     sub_count = len(subs)
+
+    # Trial eligibility: trial_days configured, user hasn't used trial yet
+    trial_days = bot_settings.trial_days if bot_settings else 0
+    trial_eligible = False
+    if trial_days:
+        trial_eligible = not await sub_repo.has_trial_subscription(user.id)
 
     text = payload["text"].format(
         first_name=user.first_name or "Пользователь",
@@ -31,4 +36,6 @@ async def cabinet_getter(dialog_manager: DialogManager, **kwargs) -> dict:
         "news_channel_url": bot_settings.news_channel_url if bot_settings else "",
         "support_url": bot_settings.support_url if bot_settings else "",
         "language_code": user.language_code,
+        "trial_eligible": trial_eligible,
+        "trial_days": trial_days,
     }

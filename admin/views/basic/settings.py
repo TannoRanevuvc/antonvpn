@@ -51,6 +51,8 @@ class BotSettingsAdmin(ModelView, model=BotSettings):
     form_columns = [
         BotSettings.registration_enabled,
         BotSettings.trial_days,
+        BotSettings.trial_squad_uuid,
+        BotSettings.default_squad_uuid,
         BotSettings.site_url,
         BotSettings.news_channel_url,
         BotSettings.support_url,

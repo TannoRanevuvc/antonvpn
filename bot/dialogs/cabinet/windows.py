@@ -19,6 +19,24 @@ async def on_language_toggle(callback: types.CallbackQuery, button: Button, mana
     await manager.show()
 
 
+async def on_trial_click(callback: types.CallbackQuery, button: Button, manager: DialogManager) -> None:
+    session = manager.middleware_data.get("session")
+    user = manager.middleware_data.get("user")
+    from database.repositories import BotSettingsRepository
+    from services.subscription_service import SubscriptionService, TrialNotAvailableError
+    bot_settings = await BotSettingsRepository(session).get()
+    svc = SubscriptionService(session)
+    try:
+        sub = await svc.create_trial(user, bot_settings)
+        days = bot_settings.trial_days if bot_settings else 0
+        await callback.answer(f"✅ Пробный период на {days} дней активирован!", show_alert=True)
+        await manager.show()
+    except TrialNotAvailableError as e:
+        await callback.answer(f"❌ {e}", show_alert=True)
+    except Exception as exc:
+        await callback.answer(f"Ошибка: {exc}", show_alert=True)
+
+
 async def on_oferta_click(callback: types.CallbackQuery, button: Button, manager: DialogManager) -> None:
     session = manager.middleware_data.get("session")
     from database.repositories import BotSettingsRepository
@@ -58,6 +76,12 @@ def build_cabinet_window() -> Window:
         Row(
             Url(Format("💬 Поддержка"), url=Format("{support_url}"), when="support_url"),
             Button(Format("🌍 Язык/Language"), id="lang", on_click=on_language_toggle),
+        ),
+        Button(
+            Format("🎯 Пробный период ({trial_days} дн.)"),
+            id="trial",
+            on_click=on_trial_click,
+            when="trial_eligible",
         ),
         Button(Format("📄 Оферта"), id="oferta", on_click=on_oferta_click),
         state=CabinetSG.MAIN,

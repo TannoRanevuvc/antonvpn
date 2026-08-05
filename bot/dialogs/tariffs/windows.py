@@ -30,9 +30,11 @@ async def on_buy_confirm(callback: types.CallbackQuery, button: Button, manager:
 
     from services.subscription_service import SubscriptionService
     from services.user_service import InsufficientBalanceError
+    from database.repositories import BotSettingsRepository
     svc = SubscriptionService(session)
+    bot_settings = await BotSettingsRepository(session).get()
     try:
-        await svc.create(user, int(tariff_id))
+        await svc.create(user, int(tariff_id), bot_settings=bot_settings)
         await callback.answer("✅ Подписка успешно создана!", show_alert=True)
         await manager.start(CabinetSG.MAIN)
     except InsufficientBalanceError:

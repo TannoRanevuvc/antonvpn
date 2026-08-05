@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models.subscription import Device, RemnaStatus, Subscription, TariffType
+from database.models.settings import BotSettings
 from database.models.user import User
 from database.repositories import (
     DeviceRepository,
@@ -14,7 +15,11 @@ from database.repositories import (
 )
 from .remnawave_service import RemnawaveService
 from .user_service import InsufficientBalanceError, UserService
-from config import logger
+from config import logger, settings as app_settings
+
+
+class TrialNotAvailableError(Exception):
+    pass
 
 
 def _make_remna_username(chat_id: int) -> str:
@@ -38,10 +43,61 @@ class SubscriptionService:
     async def get_subscription(self, sub_id: int, user_id: int) -> Subscription | None:
         return await self.sub_repo.get_by_id_and_user(sub_id, user_id)
 
-    async def create(self, user: User, tariff_id: int) -> Subscription:
+    def _unwrap_remna(self, remna_data: dict) -> dict:
+        if isinstance(remna_data.get("response"), dict):
+            return remna_data["response"]
+        return remna_data
+
+    def _extract_remna_fields(self, remna_data: dict) -> tuple[str, str | None, str | None]:
+        payload = self._unwrap_remna(remna_data)
+        remna_uuid = payload.get("uuid") or payload.get("vlessUuid") or ""
+        short_uuid = payload.get("shortUuid")
+        sub_url = payload.get("subscriptionUrl") or (
+            f"{app_settings.REMNAWAVE_PANEL_URL}/api/sub/{short_uuid}" if short_uuid else None
+        )
+        return remna_uuid, short_uuid, sub_url
+
+    async def create_trial(self, user: User, bot_settings: BotSettings) -> Subscription:
+        if not bot_settings or not bot_settings.trial_days:
+            raise TrialNotAvailableError("Trial is not configured")
+
+        already_used = await self.sub_repo.has_trial_subscription(user.id)
+        if already_used:
+            raise TrialNotAvailableError("Trial already used")
+
+        squad_uuid = bot_settings.trial_squad_uuid
+        expires_at = datetime.utcnow() + timedelta(days=bot_settings.trial_days)
+        remna_username = _make_remna_username(user.chat_id)
+
+        sub = await self.sub_repo.create(
+            user_id=user.id,
+            remna_username=remna_username,
+            tariff_type=TariffType.VPN,
+            squad_uuid=squad_uuid,
+            max_devices=1,
+            is_trial=True,
+        )
+
+        try:
+            remna_data = await self.remna.create_user(
+                username=remna_username,
+                expires_at=expires_at,
+                squad_uuid=squad_uuid,
+            )
+            remna_uuid, short_uuid, sub_url = self._extract_remna_fields(remna_data)
+            sub = await self.sub_repo.update_remna_data(sub, remna_uuid, short_uuid, sub_url, expires_at)
+        except Exception as exc:
+            logger.error("Remnawave create_user failed for trial sub %s: %s", sub.id, exc)
+
+        return sub
+
+    async def create(self, user: User, tariff_id: int, bot_settings: BotSettings | None = None) -> Subscription:
         tariff = await self.tariff_repo.get_by_id_active(tariff_id)
         if tariff is None:
             raise ValueError(f"Tariff {tariff_id} not found or inactive")
+
+        # All paid subscriptions go to the default squad
+        squad_uuid = (bot_settings.default_squad_uuid if bot_settings else None) or tariff.squad_uuid
 
         # Debit balance
         user = await self.user_service.debit_balance(user, float(tariff.price_rub))
@@ -55,7 +111,7 @@ class SubscriptionService:
             remna_username=remna_username,
             tariff_type=TariffType(tariff.tariff_type),
             tariff_id=tariff.id,
-            squad_uuid=tariff.squad_uuid,
+            squad_uuid=squad_uuid,
             max_devices=tariff.max_devices,
         )
 
@@ -72,23 +128,14 @@ class SubscriptionService:
             remna_data = await self.remna.create_user(
                 username=remna_username,
                 expires_at=expires_at,
-                squad_uuid=tariff.squad_uuid,
+                squad_uuid=squad_uuid,
             )
-            # Remnawave wraps data in a "response" key
-            remna_payload = remna_data.get("response") if isinstance(remna_data.get("response"), dict) else remna_data
-            # Newer Remnawave uses vlessUuid as the primary user UUID (no top-level "uuid" field)
-            remna_uuid = remna_payload.get("uuid") or remna_payload.get("vlessUuid") or ""
-            short_uuid = remna_payload.get("shortUuid")
-            sub_url = remna_payload.get("subscriptionUrl") or (
-                f"{__import__('config').settings.REMNAWAVE_PANEL_URL}/api/sub/{short_uuid}"
-                if short_uuid else None
-            )
+            remna_uuid, short_uuid, sub_url = self._extract_remna_fields(remna_data)
             sub = await self.sub_repo.update_remna_data(sub, remna_uuid, short_uuid, sub_url, expires_at)
             await self.payment_repo.mark_completed(payment)
         except Exception as exc:
             logger.error("Remnawave create_user failed for sub %s: %s", sub.id, exc)
             await self.payment_repo.mark_failed(payment, reason=str(exc))
-            # Don't roll back — sub is created, user was debited; will retry on next check
 
         return sub
 
