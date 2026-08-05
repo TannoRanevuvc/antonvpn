@@ -28,20 +28,20 @@ async def main() -> None:
 
     dp = Dispatcher(storage=MemoryStorage())
 
-    # Middlewares (order: DB → User → Language)
-    dp.update.outer_middleware(DBSessionMiddleware())
-    dp.update.outer_middleware(UserContextMiddleware())
-    dp.update.outer_middleware(LanguageMiddleware())
-
-    # Routers
+    # Routers and dialogs first — setup_dialogs must run before our middlewares
+    # so that dialog_manager is injected into data before UserContextMiddleware runs
     dp.include_router(start_router)
     dp.include_router(errors_router)
 
-    # Dialogs
     for dialog in get_all_dialogs():
         dp.include_router(dialog)
 
     bg_factory = setup_dialogs(dp)
+
+    # Middlewares registered after setup_dialogs so dialog_manager is available
+    dp.update.outer_middleware(DBSessionMiddleware())
+    dp.update.outer_middleware(UserContextMiddleware())
+    dp.update.outer_middleware(LanguageMiddleware())
 
     # Scheduler
     scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
