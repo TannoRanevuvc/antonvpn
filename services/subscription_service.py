@@ -49,12 +49,20 @@ class SubscriptionService:
         return remna_data
 
     def _extract_remna_fields(self, remna_data: dict) -> tuple[str, str | None, str | None]:
+        from urllib.parse import urlparse
         payload = self._unwrap_remna(remna_data)
         remna_uuid = payload.get("uuid") or payload.get("vlessUuid") or ""
         short_uuid = payload.get("shortUuid")
-        sub_url = payload.get("subscriptionUrl") or (
-            f"{app_settings.REMNAWAVE_PANEL_URL}/api/sub/{short_uuid}" if short_uuid else None
-        )
+        raw_url = payload.get("subscriptionUrl")
+        if raw_url:
+            # Remnawave returns /api/sub/{uuid}; sub-page serves at /sub/{uuid}
+            sub_url = raw_url.replace("/api/sub/", "/sub/")
+        elif short_uuid:
+            parsed = urlparse(app_settings.ADMIN_PUBLIC_BASE_URL)
+            public_base = f"{parsed.scheme}://{parsed.netloc}"
+            sub_url = f"{public_base}/sub/{short_uuid}"
+        else:
+            sub_url = None
         return remna_uuid, short_uuid, sub_url
 
     async def create_trial(self, user: User, bot_settings: BotSettings) -> Subscription:
