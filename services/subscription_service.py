@@ -74,9 +74,11 @@ class SubscriptionService:
                 expires_at=expires_at,
                 squad_uuid=tariff.squad_uuid,
             )
-            remna_uuid = remna_data.get("uuid", "")
-            short_uuid = remna_data.get("shortUuid")
-            sub_url = remna_data.get("subscriptionUrl") or (
+            # Remnawave wraps data in a "response" key
+            remna_payload = remna_data.get("response") if isinstance(remna_data.get("response"), dict) else remna_data
+            remna_uuid = remna_payload.get("uuid", "")
+            short_uuid = remna_payload.get("shortUuid")
+            sub_url = remna_payload.get("subscriptionUrl") or (
                 f"{__import__('config').settings.REMNAWAVE_PANEL_URL}/api/sub/{short_uuid}"
                 if short_uuid else None
             )
