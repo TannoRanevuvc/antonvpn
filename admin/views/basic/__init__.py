@@ -6,6 +6,7 @@ from .gift import GiftAdmin
 from .message import MessageTemplateAdmin
 from .notification import NotificationRuleAdmin
 from .settings import BotSettingsAdmin, ReferralSettingsAdmin, ChannelSettingsAdmin
+from .document import LegalDocumentAdmin
 
 __all__ = [
     "UserAdmin", "ReferralAdmin",
@@ -16,4 +17,5 @@ __all__ = [
     "MessageTemplateAdmin",
     "NotificationRuleAdmin",
     "BotSettingsAdmin", "ReferralSettingsAdmin", "ChannelSettingsAdmin",
+    "LegalDocumentAdmin",
 ]

@@ -6,6 +6,7 @@ from .gift import GiftRepository
 from .message import MessageTemplateRepository
 from .notification import NotificationRuleRepository
 from .settings import BotSettingsRepository, ReferralSettingsRepository, ChannelSettingsRepository
+from .document import LegalDocumentRepository
 
 __all__ = [
     "UserRepository", "ReferralRepository",
@@ -16,4 +17,5 @@ __all__ = [
     "MessageTemplateRepository",
     "NotificationRuleRepository",
     "BotSettingsRepository", "ReferralSettingsRepository", "ChannelSettingsRepository",
+    "LegalDocumentRepository",
 ]

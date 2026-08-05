@@ -7,6 +7,7 @@ from .gift import Gift, GiftStatus
 from .message import MessageTemplate
 from .notification import NotificationRule
 from .settings import BotSettings, ReferralSettings, ChannelSettings
+from .document import LegalDocument
 
 __all__ = [
     "Base",
@@ -18,4 +19,5 @@ __all__ = [
     "MessageTemplate",
     "NotificationRule",
     "BotSettings", "ReferralSettings", "ChannelSettings",
+    "LegalDocument",
 ]

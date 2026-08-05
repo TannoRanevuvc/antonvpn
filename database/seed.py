@@ -1,5 +1,6 @@
 """Seed initial data into the database."""
 import asyncio
+import os
 
 from sqlalchemy import select
 
@@ -7,6 +8,7 @@ from database.confdb import async_session_factory
 from database.models import (
     BotSettings,
     ChannelSettings,
+    LegalDocument,
     MessageTemplate,
     NotificationRule,
     ReferralSettings,
@@ -14,6 +16,14 @@ from database.models import (
 )
 from database.models.subscription import TariffType
 from config import logger
+
+_DOCS_DIR = os.path.join(os.path.dirname(__file__), "..", "media", "documents")
+
+LEGAL_DOCUMENTS = [
+    ("privacy-policy", "Политика конфиденциальности"),
+    ("user-agreement", "Пользовательское соглашение"),
+    ("refund-policy", "Политика возврата средств"),
+]
 
 MESSAGE_TEMPLATES = [
     ("CABINET", (
@@ -127,6 +137,17 @@ async def seed() -> None:
                     max_devices=max_devices,
                     sort_order=sort_order,
                 ))
+
+        # Legal documents — seed from HTML files if not already in DB
+        for slug, title in LEGAL_DOCUMENTS:
+            existing = await session.execute(select(LegalDocument).where(LegalDocument.slug == slug))
+            if not existing.scalar_one_or_none():
+                html_path = os.path.join(_DOCS_DIR, f"{slug}.html")
+                html_content = ""
+                if os.path.exists(html_path):
+                    with open(html_path, "r", encoding="utf-8") as f:
+                        html_content = f.read()
+                session.add(LegalDocument(slug=slug, title=title, html_content=html_content))
 
         await session.commit()
         logger.info("Database seeded successfully.")

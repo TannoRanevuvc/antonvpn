@@ -12,6 +12,7 @@ from admin.views.basic import (
     ChannelSettingsAdmin,
     DeviceAdmin,
     GiftAdmin,
+    LegalDocumentAdmin,
     MessageTemplateAdmin,
     NotificationRuleAdmin,
     PaymentAdmin,
@@ -66,6 +67,7 @@ def create_app() -> FastAPI:
         MessageTemplateAdmin,
         NotificationRuleAdmin,
         BotSettingsAdmin, ReferralSettingsAdmin, ChannelSettingsAdmin,
+        LegalDocumentAdmin,
     ]:
         admin.add_view(view_cls)
 
