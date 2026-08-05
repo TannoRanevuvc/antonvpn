@@ -26,6 +26,7 @@ from admin.views.basic import (
 )
 from admin.views.custom import BroadcastView, DashboardView
 from admin.documents import router as documents_router
+from admin.subscription_page import router as sub_page_router
 from admin.webhooks import router as webhooks_router
 from config import settings
 from database.confdb import engine
@@ -77,6 +78,7 @@ def create_app() -> FastAPI:
 
     # Routers
     app.include_router(documents_router)
+    app.include_router(sub_page_router)
     app.include_router(webhooks_router)
 
     return app
