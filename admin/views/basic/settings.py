@@ -8,11 +8,12 @@ from config import settings as app_settings
 from database.models.settings import BotSettings, ChannelSettings, ReferralSettings
 
 OFERTA_DIR = "media/oferta"
+PHOTO_DIR = "media/bot_photo"
 os.makedirs(OFERTA_DIR, exist_ok=True)
+os.makedirs(PHOTO_DIR, exist_ok=True)
 
 
 async def _apply_bot_description(model: BotSettings) -> None:
-    """Push description and short_description to Telegram Bot API."""
     token = app_settings.TOKEN_BOT_TG
     base = f"https://api.telegram.org/bot{token}"
     proxy = app_settings.SOCKS5_PROXY_URL or None
@@ -31,6 +32,17 @@ async def _apply_bot_description(model: BotSettings) -> None:
             )
 
 
+async def _apply_bot_photo(photo_path: str) -> None:
+    token = app_settings.TOKEN_BOT_TG
+    base = f"https://api.telegram.org/bot{token}"
+    proxy = app_settings.SOCKS5_PROXY_URL or None
+    async with aiohttp.ClientSession() as session:
+        with open(photo_path, "rb") as f:
+            data = aiohttp.FormData()
+            data.add_field("photo", f, filename=os.path.basename(photo_path))
+            await session.post(f"{base}/setMyPhoto", data=data, proxy=proxy)
+
+
 class BotSettingsAdmin(ModelView, model=BotSettings):
     name = "Настройки бота"
     name_plural = "Настройки бота"
@@ -45,26 +57,39 @@ class BotSettingsAdmin(ModelView, model=BotSettings):
         BotSettings.bot_description,
         BotSettings.bot_short_description,
         BotSettings.oferta_file_path,
+        BotSettings.bot_photo_path,
     ]
-    form_extra_fields = {"oferta_upload": FileField("Загрузить файл оферты (PDF/документ)")}
+    form_extra_fields = {
+        "oferta_upload": FileField("Загрузить файл оферты (PDF/документ)"),
+        "bot_photo_upload": FileField("Загрузить фото бота (JPG/PNG)"),
+    }
     form_include_pk = False
     can_create = False
     can_delete = False
 
     async def on_model_change(self, data, model, is_created, request) -> None:
-        upload = data.pop("oferta_upload", None)
-        if upload and getattr(upload, "filename", None):
-            ext = os.path.splitext(upload.filename)[1] or ".pdf"
+        oferta = data.pop("oferta_upload", None)
+        if oferta and getattr(oferta, "filename", None):
+            ext = os.path.splitext(oferta.filename)[1] or ".pdf"
             dest = os.path.join(OFERTA_DIR, f"oferta{ext}")
-            contents = upload.file.read()
             with open(dest, "wb") as f:
-                f.write(contents)
+                f.write(oferta.file.read())
             data["oferta_file_path"] = dest
+
+        photo = data.pop("bot_photo_upload", None)
+        if photo and getattr(photo, "filename", None):
+            ext = os.path.splitext(photo.filename)[1] or ".jpg"
+            dest = os.path.join(PHOTO_DIR, f"bot_photo{ext}")
+            with open(dest, "wb") as f:
+                f.write(photo.file.read())
+            data["bot_photo_path"] = dest
 
     async def after_model_change(self, data, model, is_created, request) -> None:
         from database.cache import BotSettingsCache
         await BotSettingsCache.delete()
         await _apply_bot_description(model)
+        if model.bot_photo_path and os.path.exists(model.bot_photo_path):
+            await _apply_bot_photo(model.bot_photo_path)
 
 
 class ReferralSettingsAdmin(ModelView, model=ReferralSettings):
