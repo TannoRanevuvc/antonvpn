@@ -29,8 +29,8 @@ async def referral_getter(dialog_manager: DialogManager, **kwargs) -> dict:
     # Load referral settings for live conditions text
     settings_repo = ReferralSettingsRepository(session)
     settings = await settings_repo.get()
-    l1_pct = int(settings.level1_percent) if settings else 15
-    l2_pct = int(settings.level2_percent) if settings else 5
+    l1_pct = int(float(settings.level1_percent)) if settings else 15
+    l2_pct = int(float(settings.level2_percent)) if settings else 5
     max_topups = int(settings.max_paid_topups) if settings else 2
 
     ref_link = referral_link(user.ref_code)
