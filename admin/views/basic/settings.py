@@ -8,9 +8,7 @@ from config import settings as app_settings
 from database.models.settings import BotSettings, ChannelSettings, ReferralSettings
 
 OFERTA_DIR = "media/oferta"
-PHOTO_DIR = "media/bot_photo"
 os.makedirs(OFERTA_DIR, exist_ok=True)
-os.makedirs(PHOTO_DIR, exist_ok=True)
 
 
 async def _apply_bot_description(model: BotSettings) -> None:
@@ -30,17 +28,6 @@ async def _apply_bot_description(model: BotSettings) -> None:
                 json={"short_description": model.bot_short_description, "language_code": "ru"},
                 proxy=proxy,
             )
-
-
-async def _apply_bot_photo(photo_path: str) -> None:
-    token = app_settings.TOKEN_BOT_TG
-    base = f"https://api.telegram.org/bot{token}"
-    proxy = app_settings.SOCKS5_PROXY_URL or None
-    async with aiohttp.ClientSession() as session:
-        with open(photo_path, "rb") as f:
-            data = aiohttp.FormData()
-            data.add_field("photo", f, filename=os.path.basename(photo_path))
-            await session.post(f"{base}/setMyPhoto", data=data, proxy=proxy)
 
 
 class BotSettingsAdmin(ModelView, model=BotSettings):
@@ -66,11 +53,7 @@ class BotSettingsAdmin(ModelView, model=BotSettings):
 
     async def scaffold_form(self, rules=None):
         base = await super().scaffold_form(rules)
-        # form_extra_fields is not supported in sqladmin 0.20 — inject via subclass
-        extra = {
-            "oferta_upload": FileField("Загрузить файл оферты (PDF/документ)"),
-            "bot_photo_upload": FileField("Загрузить фото бота (JPG/PNG)"),
-        }
+        extra = {"oferta_upload": FileField("Загрузить файл оферты (PDF/документ)")}
         return type(base.__name__, (base,), extra)
 
     async def on_model_change(self, data, model, is_created, request) -> None:
@@ -82,20 +65,10 @@ class BotSettingsAdmin(ModelView, model=BotSettings):
                 f.write(oferta.file.read())
             data["oferta_file_path"] = dest
 
-        photo = data.pop("bot_photo_upload", None)
-        if photo and getattr(photo, "filename", None):
-            ext = os.path.splitext(photo.filename)[1] or ".jpg"
-            dest = os.path.join(PHOTO_DIR, f"bot_photo{ext}")
-            with open(dest, "wb") as f:
-                f.write(photo.file.read())
-            data["bot_photo_path"] = dest
-
     async def after_model_change(self, data, model, is_created, request) -> None:
         from database.cache import BotSettingsCache
         await BotSettingsCache.delete()
         await _apply_bot_description(model)
-        if model.bot_photo_path and os.path.exists(model.bot_photo_path):
-            await _apply_bot_photo(model.bot_photo_path)
 
 
 class ReferralSettingsAdmin(ModelView, model=ReferralSettings):

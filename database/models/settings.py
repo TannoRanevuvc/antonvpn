@@ -9,10 +9,9 @@ from .base import Base
 class BotSettings(Base):
     __tablename__ = "bot_settings"
 
-    # Non-mapped sentinels so sqladmin's _handle_form_data doesn't crash on
-    # extra FileFields that don't correspond to model columns.
+    # Non-mapped sentinel so sqladmin's _handle_form_data doesn't crash
+    # on the oferta_upload FileField that has no corresponding model column.
     oferta_upload = None
-    bot_photo_upload = None
 
     id: Mapped[int] = mapped_column(primary_key=True, default=1)
     registration_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
