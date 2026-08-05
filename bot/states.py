@@ -48,3 +48,7 @@ class NotifySG(StatesGroup):
 
 class ChannelGateSG(StatesGroup):
     CHECK = State()
+
+
+class OfertaSG(StatesGroup):
+    VIEW = State()

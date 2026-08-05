@@ -4,6 +4,12 @@ from bot.utils.message_builder import build_payload_by_key
 from database.repositories import BotSettingsRepository, SubscriptionRepository
 
 
+async def oferta_getter(dialog_manager: DialogManager, **kwargs) -> dict:
+    session = dialog_manager.middleware_data.get("session")
+    payload = await build_payload_by_key("OFERTA", session)
+    return {"text": payload["text"], "image_path": payload["image_path"]}
+
+
 async def cabinet_getter(dialog_manager: DialogManager, **kwargs) -> dict:
     session = dialog_manager.middleware_data.get("session")
     user = dialog_manager.middleware_data.get("user")

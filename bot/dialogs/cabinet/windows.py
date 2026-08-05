@@ -1,12 +1,11 @@
-from aiogram_dialog import Window
-from aiogram_dialog.widgets.kbd import Button, Row, SwitchTo, Url
+from aiogram import types
+from aiogram_dialog import DialogManager, Window
+from aiogram_dialog.widgets.kbd import Button, Row, Url
 from aiogram_dialog.widgets.media import DynamicMedia
 from aiogram_dialog.widgets.text import Format
 
-from bot.states import CabinetSG, GiftsSG, PaymentsSG, ReferralSG, SubscriptionsSG
-from .getters import cabinet_getter
-from aiogram_dialog import DialogManager
-from aiogram import types
+from bot.states import CabinetSG, GiftsSG, OfertaSG, PaymentsSG, ReferralSG, SubscriptionsSG
+from .getters import cabinet_getter, oferta_getter
 
 
 async def on_language_toggle(callback: types.CallbackQuery, button: Button, manager: DialogManager) -> None:
@@ -40,7 +39,19 @@ def build_cabinet_window() -> Window:
             Url(Format("💬 Поддержка"), url=Format("{support_url}"), when="support_url"),
             Button(Format("🌍 Язык/Language"), id="lang", on_click=on_language_toggle),
         ),
+        Button(Format("📄 Оферта"), id="oferta", on_click=lambda c, b, m: m.start(OfertaSG.VIEW)),
         state=CabinetSG.MAIN,
         getter=cabinet_getter,
+        parse_mode="HTML",
+    )
+
+
+def build_oferta_window() -> Window:
+    return Window(
+        DynamicMedia("image_path", when="image_path"),
+        Format("{text}"),
+        Button(Format("« Назад"), id="back", on_click=lambda c, b, m: m.start(CabinetSG.MAIN)),
+        state=OfertaSG.VIEW,
+        getter=oferta_getter,
         parse_mode="HTML",
     )
