@@ -1,4 +1,5 @@
 """Custom AntonVPN subscription page — replaces remnawave/subscription-page container."""
+import base64
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -54,9 +55,10 @@ async def _proxy_raw_sub(short_uuid: str) -> Response:
             content = await resp.read()
             ct = resp.headers.get("content-type", "text/plain; charset=utf-8")
             headers = {}
-            for h in ("subscription-userinfo", "profile-update-interval", "content-disposition"):
+            for h in ("subscription-userinfo", "profile-update-interval", "content-disposition", "profile-web-page-url"):
                 if h in resp.headers:
                     headers[h] = resp.headers[h]
+            headers["profile-title"] = "base64:" + base64.b64encode("AntonVPN".encode()).decode()
             return Response(content=content, media_type=ct, headers=headers)
     except Exception:
         return Response(content=b"", status_code=502)

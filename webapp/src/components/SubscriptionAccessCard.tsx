@@ -40,13 +40,26 @@ async function copyToClipboard(text: string): Promise<void> {
   document.body.removeChild(el);
 }
 
+type CopyState = "idle" | "success" | "error";
+
+// Cache deep links by subscription URL so the same ciphertext is reused —
+// RSA PKCS#1 v1.5 is non-deterministic; a fresh ciphertext on each press
+// makes Happ treat it as a new subscription.
+const _deepLinkCache = new Map<string, string>();
+
+function getOrCreateHappDeepLink(subscriptionUrl: string): string | null {
+  const cached = _deepLinkCache.get(subscriptionUrl);
+  if (cached) return cached;
+  const link = createHappDeepLink(subscriptionUrl);
+  if (link) _deepLinkCache.set(subscriptionUrl, link);
+  return link;
+}
+
 function openHapp(subscriptionUrl: string) {
-  const deepLink = createHappDeepLink(subscriptionUrl);
+  const deepLink = getOrCreateHappDeepLink(subscriptionUrl);
   if (!deepLink) return;
   window.open(deepLink, "_blank");
 }
-
-type CopyState = "idle" | "success" | "error";
 
 export function SubscriptionAccessCard({ subscriptionUrl }: SubscriptionAccessCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
