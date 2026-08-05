@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.confdb import async_session_maker
+from database.confdb import async_session_factory as async_session_maker
 from database.repositories.document import LegalDocumentRepository
 
 router = APIRouter(prefix="/document")
