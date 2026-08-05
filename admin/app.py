@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -80,6 +81,11 @@ def create_app() -> FastAPI:
     app.include_router(documents_router)
     app.include_router(sub_page_router)
     app.include_router(webhooks_router)
+
+    # Serve React SPA static assets
+    webapp_dist = Path(__file__).parent.parent / "webapp" / "dist" / "static"
+    if webapp_dist.exists():
+        app.mount("/assets/static", StaticFiles(directory=str(webapp_dist)), name="spa-assets")
 
     return app
 

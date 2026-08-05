@@ -1,0 +1,61 @@
+.status-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.status-card__badge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.status-card__badge--success {
+  background: var(--color-success-surface);
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+
+.status-card__badge--warning {
+  background: var(--color-warning-surface);
+  color: var(--color-warning);
+  border-color: color-mix(in srgb, var(--color-warning) 30%, transparent);
+}
+
+.status-card__badge--error {
+  background: var(--color-error-surface);
+  color: var(--color-error);
+  border-color: color-mix(in srgb, var(--color-error) 30%, transparent);
+}
+
+.status-card__headline {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.status-card__secondary {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.status-card__date {
+  font-size: 15px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.status-card__days {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.status-card__days--warning {
+  color: var(--color-warning);
+}
