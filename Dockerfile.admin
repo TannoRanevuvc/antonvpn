@@ -11,5 +11,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD sh -c "alembic upgrade head && python database/seed.py && \
+CMD sh -c "alembic upgrade head && python -m database.seed && \
     gunicorn -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 admin.app:app"
