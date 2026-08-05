@@ -17,7 +17,7 @@ _WEBAPP_DIST = Path(__file__).parent.parent / "webapp" / "dist"
 # User-agents of VPN clients that expect raw subscription data
 _VPN_CLIENT_RE = re.compile(
     r"clash|v2ray|shadowrocket|quantumult|surge|hiddify|sing.?box|"
-    r"streisand|stash|loon|nekobox|nekoray|karing|flclash|mihomo|xray",
+    r"streisand|stash|loon|nekobox|nekoray|karing|flclash|mihomo|xray|happ",
     re.I,
 )
 
