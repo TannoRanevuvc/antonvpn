@@ -76,7 +76,8 @@ class SubscriptionService:
             )
             # Remnawave wraps data in a "response" key
             remna_payload = remna_data.get("response") if isinstance(remna_data.get("response"), dict) else remna_data
-            remna_uuid = remna_payload.get("uuid", "")
+            # Newer Remnawave uses vlessUuid as the primary user UUID (no top-level "uuid" field)
+            remna_uuid = remna_payload.get("uuid") or remna_payload.get("vlessUuid") or ""
             short_uuid = remna_payload.get("shortUuid")
             sub_url = remna_payload.get("subscriptionUrl") or (
                 f"{__import__('config').settings.REMNAWAVE_PANEL_URL}/api/sub/{short_uuid}"
