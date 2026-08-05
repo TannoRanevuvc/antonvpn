@@ -1,16 +1,14 @@
 """
-Load/create the user from DB, check mandatory channel subscription,
-and block the update if the user is banned or not subscribed.
+Load/create the user from DB, enforce consent gate, then channel subscription gate.
 """
 from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware, Bot
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, TelegramObject, Update, CallbackQuery
+from aiogram.types import CallbackQuery, Message, TelegramObject, Update
 from aiogram_dialog import DialogManager, StartMode
 
-from bot.states import ChannelGateSG
+from bot.states import ChannelGateSG, ConsentSG
 from database.repositories import UserRepository
 from services.user_service import UserService
 from config import logger
@@ -27,7 +25,6 @@ class UserContextMiddleware(BaseMiddleware):
         if session is None:
             return await handler(event, data)
 
-        # Extract user info from the update
         tg_user = None
         if isinstance(event, (Message, CallbackQuery)):
             tg_user = event.from_user
@@ -50,24 +47,42 @@ class UserContextMiddleware(BaseMiddleware):
         )
 
         if user.is_banned:
-            return  # silently drop updates from banned users
+            return
 
         await user_service.update_activity(user)
         data["user"] = user
         data["is_new_user"] = is_new
 
-        # Check mandatory channel subscription
-        bot: Bot = data.get("bot") or data.get("event_from_user")
-        if bot is None:
-            bot = data.get("bot")
-
+        bot: Bot | None = data.get("bot")
         if bot and not isinstance(bot, Bot):
             bot = None
 
-        if bot:
+        dialog_manager: DialogManager | None = data.get("dialog_manager")
+
+        # Get current FSM state to avoid redirect loops
+        fsm: FSMContext | None = data.get("state")
+        current_state: str | None = None
+        if fsm:
+            current_state = await fsm.get_state()
+
+        # ── Consent gate ──────────────────────────────────────────────────────
+        if user.consent_at is None:
+            # Allow callbacks inside the consent dialog to be handled normally
+            if current_state == ConsentSG.AGREE.state:
+                return await handler(event, data)
+
+            if dialog_manager:
+                try:
+                    await dialog_manager.start(ConsentSG.AGREE, mode=StartMode.RESET_STACK)
+                    return
+                except Exception as exc:
+                    logger.warning("Could not start ConsentSG: %s", exc)
+            return await handler(event, data)
+
+        # ── Channel gate ──────────────────────────────────────────────────────
+        if bot and current_state != ChannelGateSG.CHECK.state:
             is_member = await user_service.check_channel_membership(user, bot)
             if not is_member:
-                dialog_manager: DialogManager | None = data.get("dialog_manager")
                 if dialog_manager:
                     try:
                         await dialog_manager.start(ChannelGateSG.CHECK, mode=StartMode.RESET_STACK)

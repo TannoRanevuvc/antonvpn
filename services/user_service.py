@@ -80,6 +80,13 @@ class UserService:
     async def set_blocked_bot(self, user: User, blocked: bool) -> User:
         return await self.user_repo.set_blocked_bot(user, blocked)
 
+    async def give_consent(self, user: User) -> User:
+        from datetime import datetime
+        user.consent_at = datetime.utcnow()
+        await self.session.flush()
+        await self.session.commit()
+        return user
+
     async def update_language(self, user: User, lang: str) -> User:
         return await self.user_repo.update_language(user, lang)
 

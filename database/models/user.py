@@ -26,6 +26,7 @@ class User(Base):
     balance_rub: Mapped[float] = mapped_column(Numeric(10, 2), default=0, server_default="0")
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     blocked_bot: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    consent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, server_default=func.now())
     last_activity: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

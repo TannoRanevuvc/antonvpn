@@ -46,5 +46,9 @@ class NotifySG(StatesGroup):
     EXPIRED = State()
 
 
+class ConsentSG(StatesGroup):
+    AGREE = State()
+
+
 class ChannelGateSG(StatesGroup):
     CHECK = State()

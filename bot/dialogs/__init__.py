@@ -1,4 +1,5 @@
 from .cabinet import create_cabinet_dialog
+from .consent import create_consent_dialog
 from .subscriptions import create_subscriptions_dialog
 from .tariffs import create_tariffs_dialog
 from .payments import create_payments_dialog
@@ -10,6 +11,7 @@ from .channel_gate import create_channel_gate_dialog
 
 def get_all_dialogs():
     return [
+        create_consent_dialog(),
         create_cabinet_dialog(),
         create_subscriptions_dialog(),
         create_tariffs_dialog(),
