@@ -24,6 +24,7 @@ from admin.views.basic import (
     UserAdmin,
 )
 from admin.views.custom import BroadcastView, DashboardView
+from admin.documents import router as documents_router
 from admin.webhooks import router as webhooks_router
 from config import settings
 from database.confdb import engine
@@ -73,6 +74,7 @@ def create_app() -> FastAPI:
     admin.add_view(BroadcastView)
 
     # Routers
+    app.include_router(documents_router)
     app.include_router(webhooks_router)
 
     return app

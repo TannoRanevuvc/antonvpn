@@ -96,7 +96,18 @@ async def seed() -> None:
 
         # Singleton settings
         if not (await session.execute(select(BotSettings).where(BotSettings.id == 1))).scalar_one_or_none():
-            session.add(BotSettings(id=1))
+            session.add(BotSettings(
+                id=1,
+                bot_description=(
+                    "🔒 AntonVPN — быстрый и надёжный VPN\n\n"
+                    "Безлимитный трафик · Обход блокировок · Поддержка 24/7\n\n"
+                    "📄 Документы:\n"
+                    "· Соглашение: anton-vpn.24bix.ru/document/user-agreement\n"
+                    "· Конфиденциальность: anton-vpn.24bix.ru/document/privacy-policy\n"
+                    "· Возвраты: anton-vpn.24bix.ru/document/refund-policy"
+                ),
+                bot_short_description="Быстрый VPN с обходом блокировок. Подключите до 3 устройств.",
+            ))
 
         if not (await session.execute(select(ReferralSettings).where(ReferralSettings.id == 1))).scalar_one_or_none():
             session.add(ReferralSettings(id=1))
