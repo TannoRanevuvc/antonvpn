@@ -46,23 +46,20 @@ class BotSettingsAdmin(ModelView, model=BotSettings):
         BotSettings.bot_short_description,
         BotSettings.oferta_file_path,
     ]
-    form_overrides = {"oferta_file_path": FileField}
-    form_args = {"oferta_file_path": {"label": "Файл оферты (PDF/документ)"}}
+    form_extra_fields = {"oferta_upload": FileField("Загрузить файл оферты (PDF/документ)")}
     form_include_pk = False
     can_create = False
     can_delete = False
 
     async def on_model_change(self, data, model, is_created, request) -> None:
-        upload = data.get("oferta_file_path")
-        if upload and hasattr(upload, "filename") and upload.filename:
-            ext = os.path.splitext(upload.filename)[1]
+        upload = data.pop("oferta_upload", None)
+        if upload and getattr(upload, "filename", None):
+            ext = os.path.splitext(upload.filename)[1] or ".pdf"
             dest = os.path.join(OFERTA_DIR, f"oferta{ext}")
             contents = upload.file.read()
             with open(dest, "wb") as f:
                 f.write(contents)
             data["oferta_file_path"] = dest
-        else:
-            data["oferta_file_path"] = model.oferta_file_path
 
     async def after_model_change(self, data, model, is_created, request) -> None:
         from database.cache import BotSettingsCache
