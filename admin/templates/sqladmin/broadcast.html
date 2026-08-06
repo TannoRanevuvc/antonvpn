@@ -9,51 +9,127 @@
       </div>
     </div>
   </div>
+
   {% if message %}
   <div class="alert alert-{% if '✅' in message %}success{% else %}warning{% endif %} mb-3">
     {{ message }}
   </div>
   {% endif %}
+
   <div class="card">
     <div class="card-header"><h3 class="card-title">Отправить сообщение</h3></div>
     <div class="card-body">
       <form method="POST">
         <div class="mb-3">
-          <label class="form-label">Сегмент</label>
+          <label class="form-label fw-bold">Сегмент аудитории</label>
           <select name="segment" class="form-select">
-            <option value="all">Все пользователи</option>
-            <option value="active_vpn">Активные VPN</option>
-            <option value="active_obfs">Активные Обход</option>
-            <option value="expiring_3d">Истекают за 3 дня</option>
-            <option value="no_sub">Без подписки</option>
+            <optgroup label="Все">
+              <option value="all">Все пользователи (не забанены, бот не заблокирован)</option>
+            </optgroup>
+            <optgroup label="По подписке">
+              <option value="active_any">Активная подписка (любой тариф)</option>
+              <option value="active_vpn">Активная подписка — VPN</option>
+              <option value="active_obfs">Активная подписка — Обход глушилок</option>
+              <option value="expiring_3d">Истекает в течение 3 дней</option>
+              <option value="expiring_7d">Истекает в течение 7 дней</option>
+              <option value="expired">Подписка истекла (отключена)</option>
+              <option value="no_sub">Без подписки</option>
+            </optgroup>
+            <optgroup label="По активности">
+              <option value="new_7d">Зарегистрировались за последние 7 дней</option>
+              <option value="new_30d">Зарегистрировались за последние 30 дней</option>
+              <option value="inactive_30d">Не заходили 30+ дней</option>
+            </optgroup>
+            <optgroup label="По балансу">
+              <option value="has_balance">Есть деньги на балансе</option>
+            </optgroup>
           </select>
         </div>
+
         <div class="mb-3">
-          <label class="form-label">Текст сообщения (HTML)</label>
-          <textarea name="text" class="form-control" rows="6" placeholder="Введите текст..."></textarea>
+          <label class="form-label fw-bold">Текст сообщения (HTML)</label>
+          <textarea name="text" class="form-control font-monospace" rows="7"
+            placeholder="Введите текст... Поддерживается HTML: <b>жирный</b>, <i>курсив</i>, <a href='...'>ссылка</a>"></textarea>
+          <div class="form-hint">Поддерживаются теги: &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;s&gt;, &lt;code&gt;, &lt;pre&gt;, &lt;a href="..."&gt;</div>
         </div>
-        <button type="submit" class="btn btn-primary">Отправить</button>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Фото (необязательно)</label>
+          <input type="url" name="photo_url" class="form-control"
+            placeholder="https://example.com/image.jpg — прямая ссылка на изображение">
+          <div class="form-hint">Если указано, текст отправляется как подпись к фото (caption, до 1024 символов).</div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Кнопка — текст (необязательно)</label>
+            <input type="text" name="btn_text" class="form-control" placeholder="Например: Открыть сайт">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Кнопка — URL</label>
+            <input type="url" name="btn_url" class="form-control" placeholder="https://...">
+          </div>
+        </div>
+        <div class="form-hint mb-3">Кнопка добавляется только если заполнены оба поля.</div>
+
+        <button type="submit" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+            stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+            <path d="M21 3l-6.5 18a0.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a0.55 .55 0 0 1 0 -1l18 -6.5"/>
+          </svg>
+          Запустить рассылку
+        </button>
       </form>
     </div>
   </div>
+
   {% if progress %}
   <div class="card mt-3">
-    <div class="card-header"><h3 class="card-title">Активные рассылки</h3></div>
+    <div class="card-header"><h3 class="card-title">Активные и завершённые рассылки</h3></div>
     <div class="card-body">
-      <table class="table table-vcenter">
-        <thead><tr><th>ID</th><th>Отправлено</th><th>Ошибок</th><th>Всего</th><th>Статус</th></tr></thead>
-        <tbody>
-          {% for job_id, p in progress.items() %}
+      <table class="table table-vcenter card-table">
+        <thead>
           <tr>
-            <td>{{ job_id }}</td>
-            <td>{{ p.sent }}</td>
-            <td>{{ p.failed }}</td>
+            <th>ID задачи</th>
+            <th>Отправлено</th>
+            <th>Ошибок</th>
+            <th>Всего</th>
+            <th>Прогресс</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job_id, p in progress.items() | reverse %}
+          <tr>
+            <td><code>{{ job_id }}</code></td>
+            <td class="text-green">{{ p.sent }}</td>
+            <td class="text-red">{{ p.failed }}</td>
             <td>{{ p.total }}</td>
-            <td>{% if p.done %}<span class="badge bg-success">Готово</span>{% else %}<span class="badge bg-warning">В процессе</span>{% endif %}</td>
+            <td>
+              {% if p.total > 0 %}
+              {% set pct = ((p.sent + p.failed) / p.total * 100) | int %}
+              <div class="progress" style="height: 6px;">
+                <div class="progress-bar" style="width: {{ pct }}%"></div>
+              </div>
+              <small>{{ pct }}%</small>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.done %}
+                <span class="badge bg-success text-success-fg">Завершено</span>
+              {% else %}
+                <span class="badge bg-warning text-warning-fg">В процессе</span>
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
+    </div>
+    <div class="card-footer">
+      <small class="text-muted">Обновите страницу для актуального прогресса.</small>
     </div>
   </div>
   {% endif %}
