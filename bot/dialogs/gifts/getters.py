@@ -51,7 +51,10 @@ async def gift_sent_getter(dialog_manager: DialogManager, **kwargs) -> dict:
 
 async def gift_activate_getter(dialog_manager: DialogManager, **kwargs) -> dict:
     session = dialog_manager.middleware_data.get("session")
-    code = dialog_manager.dialog_data.get("gift_code", "")
+    # start_data holds code passed from start_handler; dialog_data holds it on subsequent renders
+    code = dialog_manager.dialog_data.get("gift_code") or (dialog_manager.start_data or {}).get("gift_code", "")
+    if code:
+        dialog_manager.dialog_data["gift_code"] = code  # persist so on_gift_activate can read it
     from database.repositories import GiftRepository, TariffRepository
     gift = await GiftRepository(session).get_by_code(code)
     if not gift:
