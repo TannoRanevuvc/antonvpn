@@ -243,7 +243,7 @@ class BroadcastView(BaseView):
 
             if not text:
                 return RedirectResponse(
-                    url=str(request.url_for("broadcast")) + "?error=empty",
+                    url=str(request.url).split("?")[0] + "?error=empty",
                     status_code=303,
                 )
 
@@ -263,7 +263,7 @@ class BroadcastView(BaseView):
                 _send_broadcast(job_id, users, text, photo_bytes, photo_filename, btn_text, btn_url)
             )
             return RedirectResponse(
-                url=str(request.url_for("broadcast")) + f"?ok={job_id}&count={len(users)}",
+                url=str(request.url).split("?")[0] + f"?ok={job_id}&count={len(users)}",
                 status_code=303,
             )
 
