@@ -43,7 +43,10 @@ class GiftService:
             raise GiftError("Gift not found")
         if gift.status != "pending":
             raise GiftError(f"Gift is already {gift.status}")
-        if gift.expires_at and gift.expires_at < datetime.utcnow():
+        expires_at = gift.expires_at
+        if isinstance(expires_at, str):
+            expires_at = datetime.fromisoformat(expires_at)
+        if expires_at and expires_at < datetime.utcnow():
             raise GiftError("Gift has expired")
         if gift.sender_user_id == recipient.id:
             raise GiftError("Cannot activate your own gift")

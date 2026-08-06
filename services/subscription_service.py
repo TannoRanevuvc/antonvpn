@@ -158,7 +158,10 @@ class SubscriptionService:
 
         user = await self.user_service.debit_balance(user, float(tariff.price_rub))
 
-        base = sub.expires_at if sub.expires_at and sub.expires_at > datetime.utcnow() else datetime.utcnow()
+        sub_expires = sub.expires_at
+        if isinstance(sub_expires, str):
+            sub_expires = datetime.fromisoformat(sub_expires)
+        base = sub_expires if sub_expires and sub_expires > datetime.utcnow() else datetime.utcnow()
         new_expiry = base + timedelta(days=tariff.duration_days)
 
         payment = await self.payment_repo.create(
