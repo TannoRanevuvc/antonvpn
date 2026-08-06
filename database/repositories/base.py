@@ -22,7 +22,9 @@ class BaseRepository(Generic[T]):
         return list(result.scalars().all())
 
     async def save(self, instance: T) -> T:
-        self.session.add(instance)
+        # merge() handles both new objects (INSERT) and detached/transient
+        # objects reconstructed from cache (UPDATE by PK) correctly.
+        instance = await self.session.merge(instance)
         await self.session.commit()
         await self.session.refresh(instance)
         return instance

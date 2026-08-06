@@ -35,12 +35,19 @@ class GiftRepository(BaseRepository[Gift]):
         return gift
 
     async def activate(self, gift: Gift, recipient_user_id: int) -> Gift:
-        gift.status = GiftStatus.ACTIVATED
-        gift.recipient_user_id = recipient_user_id
-        gift.activated_at = datetime.utcnow()
-        gift = await self.save(gift)
-        await GiftCache.delete(gift.activation_code)
-        return gift
+        # Re-fetch from DB to ensure a session-attached persistent object.
+        # gift may be a transient instance reconstructed from Redis cache,
+        # which would cause session.add() to attempt INSERT instead of UPDATE.
+        code = gift.activation_code
+        db_gift = await self.session.get(Gift, gift.id)
+        if db_gift is None:
+            raise ValueError(f"Gift {gift.id} not found in DB")
+        db_gift.status = GiftStatus.ACTIVATED
+        db_gift.recipient_user_id = recipient_user_id
+        db_gift.activated_at = datetime.utcnow()
+        db_gift = await self.save(db_gift)
+        await GiftCache.delete(code)
+        return db_gift
 
     async def expire_old(self) -> int:
         result = await self.session.execute(
