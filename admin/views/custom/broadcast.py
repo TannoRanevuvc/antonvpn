@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import aiohttp
 from sqladmin import BaseView, expose
 from starlette.requests import Request
+from starlette.responses import RedirectResponse
 
 from database.confdb import async_session_factory
 from config import logger, settings
@@ -233,7 +234,6 @@ class BroadcastView(BaseView):
 
     @expose("/broadcast", methods=["GET", "POST"])
     async def broadcast(self, request: Request):
-        message = ""
         if request.method == "POST":
             form = await request.form()
             text = form.get("text", "").strip()
@@ -241,28 +241,44 @@ class BroadcastView(BaseView):
             btn_text = form.get("btn_text", "").strip() or None
             btn_url = form.get("btn_url", "").strip() or None
 
-            if text:
-                photo_bytes = None
-                photo_filename = "photo.jpg"
-                photo_file = form.get("photo")
-                if photo_file and hasattr(photo_file, "read"):
-                    photo_bytes = await photo_file.read()
-                    if not photo_bytes:
-                        photo_bytes = None
-                    else:
-                        photo_filename = photo_file.filename or "photo.jpg"
-
-                users = await _get_segment_users(segment)
-                job_id = str(uuid.uuid4())[:8]
-                asyncio.create_task(
-                    _send_broadcast(job_id, users, text, photo_bytes, photo_filename, btn_text, btn_url)
+            if not text:
+                return RedirectResponse(
+                    url=str(request.url_for("broadcast")) + "?error=empty",
+                    status_code=303,
                 )
-                message = f"✅ Рассылка #{job_id} запущена для {len(users)} пользователей."
-            else:
-                message = "⚠️ Введите текст сообщения."
+
+            photo_bytes = None
+            photo_filename = "photo.jpg"
+            photo_file = form.get("photo")
+            if photo_file and hasattr(photo_file, "read"):
+                photo_bytes = await photo_file.read()
+                if not photo_bytes:
+                    photo_bytes = None
+                else:
+                    photo_filename = photo_file.filename or "photo.jpg"
+
+            users = await _get_segment_users(segment)
+            job_id = str(uuid.uuid4())[:8]
+            asyncio.create_task(
+                _send_broadcast(job_id, users, text, photo_bytes, photo_filename, btn_text, btn_url)
+            )
+            return RedirectResponse(
+                url=str(request.url_for("broadcast")) + f"?ok={job_id}&count={len(users)}",
+                status_code=303,
+            )
+
+        message = ""
+        msg_type = "success"
+        if "ok" in request.query_params:
+            job_id = request.query_params["ok"]
+            count = request.query_params.get("count", "?")
+            message = f"✅ Рассылка #{job_id} запущена для {count} пользователей."
+        elif "error" in request.query_params:
+            message = "⚠️ Введите текст сообщения."
+            msg_type = "warning"
 
         return await self.templates.TemplateResponse(
             request,
             "sqladmin/broadcast.html",
-            {"message": message, "progress": _progress},
+            {"message": message, "msg_type": msg_type, "progress": _progress},
         )

@@ -11,9 +11,7 @@
   </div>
 
   {% if message %}
-  <div class="alert alert-{% if '✅' in message %}success{% else %}warning{% endif %} mb-3">
-    {{ message }}
-  </div>
+  <div class="alert alert-{{ msg_type or 'success' }} mb-3">{{ message }}</div>
   {% endif %}
 
   <div class="card">
