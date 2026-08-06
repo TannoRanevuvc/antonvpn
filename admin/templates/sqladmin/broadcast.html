@@ -19,7 +19,7 @@
   <div class="card">
     <div class="card-header"><h3 class="card-title">Отправить сообщение</h3></div>
     <div class="card-body">
-      <form method="POST">
+      <form method="POST" enctype="multipart/form-data">
         <div class="mb-3">
           <label class="form-label fw-bold">Сегмент аудитории</label>
           <select name="segment" class="form-select">
@@ -55,9 +55,8 @@
 
         <div class="mb-3">
           <label class="form-label fw-bold">Фото (необязательно)</label>
-          <input type="url" name="photo_url" class="form-control"
-            placeholder="https://example.com/image.jpg — прямая ссылка на изображение">
-          <div class="form-hint">Если указано, текст отправляется как подпись к фото (caption, до 1024 символов).</div>
+          <input type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp">
+          <div class="form-hint">Если прикреплено, текст отправляется как подпись к фото (caption, до 1024 символов).</div>
         </div>
 
         <div class="row">

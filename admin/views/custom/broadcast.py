@@ -148,38 +148,44 @@ async def _send_broadcast(
     job_id: str,
     users: list[tuple],
     text: str,
-    photo_url: str | None = None,
+    photo_bytes: bytes | None = None,
+    photo_filename: str = "photo.jpg",
     btn_text: str | None = None,
     btn_url: str | None = None,
 ) -> None:
+    import json as _json
+
     sent = 0
     failed = 0
     total = len(users)
     _progress[job_id] = {"sent": 0, "failed": 0, "total": total, "done": False}
     proxy = settings.SOCKS5_PROXY_URL or None
 
-    reply_markup = None
+    reply_markup_str = None
     if btn_text and btn_url:
-        reply_markup = {"inline_keyboard": [[{"text": btn_text, "url": btn_url}]]}
+        reply_markup_str = _json.dumps({"inline_keyboard": [[{"text": btn_text, "url": btn_url}]]})
 
     connector = aiohttp.TCPConnector()
     async with aiohttp.ClientSession(connector=connector) as http:
         for _tg_id, chat_id in users:
             try:
-                if photo_url:
-                    payload = {
-                        "chat_id": chat_id,
-                        "photo": photo_url,
-                        "caption": text,
-                        "parse_mode": "HTML",
-                    }
-                    if reply_markup:
-                        payload["reply_markup"] = reply_markup
+                if photo_bytes:
+                    form = aiohttp.FormData()
+                    form.add_field("chat_id", str(chat_id))
+                    form.add_field("caption", text)
+                    form.add_field("parse_mode", "HTML")
+                    if reply_markup_str:
+                        form.add_field("reply_markup", reply_markup_str)
+                    form.add_field(
+                        "photo", photo_bytes,
+                        filename=photo_filename,
+                        content_type="image/jpeg",
+                    )
                     resp = await http.post(
                         f"{_TG_API}/sendPhoto",
-                        json=payload,
+                        data=form,
                         proxy=proxy,
-                        timeout=aiohttp.ClientTimeout(total=15),
+                        timeout=aiohttp.ClientTimeout(total=30),
                     )
                 else:
                     payload = {
@@ -187,8 +193,8 @@ async def _send_broadcast(
                         "text": text,
                         "parse_mode": "HTML",
                     }
-                    if reply_markup:
-                        payload["reply_markup"] = reply_markup
+                    if reply_markup_str:
+                        payload["reply_markup"] = _json.loads(reply_markup_str)
                     resp = await http.post(
                         f"{_TG_API}/sendMessage",
                         json=payload,
@@ -232,15 +238,24 @@ class BroadcastView(BaseView):
             form = await request.form()
             text = form.get("text", "").strip()
             segment = form.get("segment", "all")
-            photo_url = form.get("photo_url", "").strip() or None
             btn_text = form.get("btn_text", "").strip() or None
             btn_url = form.get("btn_url", "").strip() or None
 
             if text:
+                photo_bytes = None
+                photo_filename = "photo.jpg"
+                photo_file = form.get("photo")
+                if photo_file and hasattr(photo_file, "read"):
+                    photo_bytes = await photo_file.read()
+                    if not photo_bytes:
+                        photo_bytes = None
+                    else:
+                        photo_filename = photo_file.filename or "photo.jpg"
+
                 users = await _get_segment_users(segment)
                 job_id = str(uuid.uuid4())[:8]
                 asyncio.create_task(
-                    _send_broadcast(job_id, users, text, photo_url, btn_text, btn_url)
+                    _send_broadcast(job_id, users, text, photo_bytes, photo_filename, btn_text, btn_url)
                 )
                 message = f"✅ Рассылка #{job_id} запущена для {len(users)} пользователей."
             else:
