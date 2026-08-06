@@ -110,7 +110,7 @@ class BroadcastView(BaseView):
     def set_bot(cls, bot) -> None:
         cls._bot = bot
 
-    @expose("/admin/broadcast", methods=["GET", "POST"])
+    @expose("/broadcast", methods=["GET", "POST"])
     async def broadcast(self, request: Request):
         message = ""
         if request.method == "POST":

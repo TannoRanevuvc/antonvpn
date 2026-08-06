@@ -89,7 +89,7 @@ class DashboardView(BaseView):
     name = "Дашборд"
     icon = "fa-solid fa-chart-line"
 
-    @expose("/admin/dashboard", methods=["GET"])
+    @expose("/dashboard", methods=["GET"])
     async def dashboard(self, request: Request):
         cached = await DashboardCache.get()
         if cached:
