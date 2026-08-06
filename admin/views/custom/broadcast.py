@@ -1,13 +1,16 @@
 """Admin broadcast view: send messages to all or segmented users."""
 import asyncio
+import uuid
 from datetime import datetime, timedelta
 
+import aiohttp
 from sqladmin import BaseView, expose
 from starlette.requests import Request
-from starlette.responses import HTMLResponse
 
 from database.confdb import async_session_factory
 from config import logger, settings
+
+_TG_API = f"https://api.telegram.org/bot{settings.TOKEN_BOT_TG}"
 
 _progress: dict = {}
 
@@ -69,46 +72,51 @@ async def _get_segment_users(segment: str) -> list[tuple[int, int]]:
         return list(result.all())
 
 
-async def _send_broadcast(job_id: str, bot, users: list[tuple], text: str) -> None:
-    from aiogram.exceptions import TelegramForbiddenError
+async def _send_broadcast(job_id: str, users: list[tuple], text: str) -> None:
     sent = 0
     failed = 0
     total = len(users)
     _progress[job_id] = {"sent": 0, "failed": 0, "total": total, "done": False}
+    proxy = settings.SOCKS5_PROXY_URL or None
 
-    for tg_id, chat_id in users:
-        try:
-            await bot.send_message(chat_id, text, parse_mode="HTML")
-            sent += 1
-        except TelegramForbiddenError:
-            failed += 1
-            async with async_session_factory() as session:
-                from database.repositories import UserRepository
-                repo = UserRepository(session)
-                user = await repo.get_by_chat_id(chat_id)
-                if user:
-                    user.blocked_bot = True
-                    await repo.save(user)
-        except Exception as exc:
-            logger.warning("Broadcast failed for %s: %s", chat_id, exc)
-            failed += 1
+    connector = aiohttp.TCPConnector()
+    async with aiohttp.ClientSession(connector=connector) as http:
+        for _tg_id, chat_id in users:
+            try:
+                resp = await http.post(
+                    f"{_TG_API}/sendMessage",
+                    json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"},
+                    proxy=proxy,
+                    timeout=aiohttp.ClientTimeout(total=10),
+                )
+                data = await resp.json()
+                if data.get("ok"):
+                    sent += 1
+                else:
+                    err = data.get("description", "")
+                    if "bot was blocked" in err or "user is deactivated" in err or "chat not found" in err:
+                        async with async_session_factory() as session:
+                            from database.repositories import UserRepository
+                            user = await UserRepository(session).get_by_chat_id(chat_id)
+                            if user:
+                                user.blocked_bot = True
+                                await UserRepository(session).save(user)
+                    failed += 1
+            except Exception as exc:
+                logger.warning("Broadcast failed for chat_id=%s: %s", chat_id, exc)
+                failed += 1
 
-        _progress[job_id]["sent"] = sent
-        _progress[job_id]["failed"] = failed
-        await asyncio.sleep(0.05)  # ~20 msg/s Telegram rate limit
+            _progress[job_id]["sent"] = sent
+            _progress[job_id]["failed"] = failed
+            await asyncio.sleep(0.05)  # ~20 msg/s
 
     _progress[job_id]["done"] = True
-    logger.info("Broadcast %s complete: sent=%d failed=%d", job_id, sent, failed)
+    logger.info("Broadcast %s done: sent=%d failed=%d", job_id, sent, failed)
 
 
 class BroadcastView(BaseView):
     name = "Рассылка"
     icon = "fa-solid fa-bullhorn"
-    _bot = None
-
-    @classmethod
-    def set_bot(cls, bot) -> None:
-        cls._bot = bot
 
     @expose("/broadcast", methods=["GET", "POST"])
     async def broadcast(self, request: Request):
@@ -118,11 +126,10 @@ class BroadcastView(BaseView):
             text = form.get("text", "").strip()
             segment = form.get("segment", "all")
 
-            if text and self._bot:
+            if text:
                 users = await _get_segment_users(segment)
-                import uuid
                 job_id = str(uuid.uuid4())[:8]
-                asyncio.create_task(_send_broadcast(job_id, self._bot, users, text))
+                asyncio.create_task(_send_broadcast(job_id, users, text))
                 message = f"✅ Рассылка #{job_id} запущена для {len(users)} пользователей."
             else:
                 message = "⚠️ Введите текст сообщения."
