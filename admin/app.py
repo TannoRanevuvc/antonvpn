@@ -58,6 +58,7 @@ def create_app() -> FastAPI:
         authentication_backend=auth_backend,
         base_url=settings.BASE_ADMIN_URL,
         title="AntonVPN Admin",
+        templates_dir=str(Path(__file__).parent / "templates"),
     )
 
     # Register model views

@@ -1,4 +1,5 @@
-{% extends "sqladmin/layout.html" %}
+{% extends "layout.html" %}
+
 {% block content %}
 <div class="container-xl">
   <div class="page-header">
@@ -10,40 +11,40 @@
     </div>
   </div>
 
-  <div class="row row-deck row-cards">
+  <div class="row row-cards">
     <div class="col-sm-6 col-lg-3">
       <div class="card">
         <div class="card-body">
-          <div class="subheader">Пользователи (всего)</div>
+          <div class="subheader">Всего пользователей</div>
           <div class="h1 mb-3">{{ stats.total_users }}</div>
-          <div class="text-muted">Сегодня: +{{ stats.users_today }} | 7д: +{{ stats.users_7d }}</div>
+          <div class="text-muted">Сегодня: +{{ stats.users_today }} &nbsp; За 7 дней: +{{ stats.users_7d }}</div>
         </div>
       </div>
     </div>
     <div class="col-sm-6 col-lg-3">
       <div class="card">
         <div class="card-body">
-          <div class="subheader">Активные подписки</div>
+          <div class="subheader">Активных подписок</div>
           <div class="h1 mb-3">{{ stats.active_subs }}</div>
-          <div class="text-muted">VPN: {{ stats.active_vpn }} | Обход: {{ stats.active_obfs }}</div>
+          <div class="text-muted">VPN: {{ stats.active_vpn }} &nbsp; Обход: {{ stats.active_obfs }}</div>
         </div>
       </div>
     </div>
     <div class="col-sm-6 col-lg-3">
       <div class="card">
         <div class="card-body">
-          <div class="subheader">Истекают</div>
+          <div class="subheader">Истекает скоро</div>
           <div class="h1 mb-3">{{ stats.expiring_3d }}</div>
-          <div class="text-muted">За 3д | За 7д: {{ stats.expiring_7d }}</div>
+          <div class="text-muted">За 3 дня &nbsp;|&nbsp; За 7 дней: {{ stats.expiring_7d }}</div>
         </div>
       </div>
     </div>
     <div class="col-sm-6 col-lg-3">
       <div class="card">
         <div class="card-body">
-          <div class="subheader">Выручка (30д)</div>
-          <div class="h1 mb-3">{{ "%.2f"|format(stats.revenue_30d) }}₽</div>
-          <div class="text-muted">Сегодня: {{ "%.2f"|format(stats.revenue_today) }}₽ | Пополнений: {{ stats.topup_count }}</div>
+          <div class="subheader">Выручка (30 дней)</div>
+          <div class="h1 mb-3">{{ "%.0f"|format(stats.revenue_30d) }} ₽</div>
+          <div class="text-muted">Сегодня: {{ "%.0f"|format(stats.revenue_today) }} ₽ &nbsp; Пополнений: {{ stats.topup_count }}</div>
         </div>
       </div>
     </div>
